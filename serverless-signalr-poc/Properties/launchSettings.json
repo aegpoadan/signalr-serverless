@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "serverless-signalr-poc": {
+      "commandName": "Project",
+      "commandLineArgs": "start --verbose"
+    }
+  }
+}
