@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Microsoft.Azure.WebJobs.Extensions.SignalRService;
 using Microsoft.AspNetCore.SignalR;
+using System.Collections.Generic;
 
 namespace serverless_signalr_poc
 {
@@ -33,13 +34,16 @@ namespace serverless_signalr_poc
         {
             await UserGroups.AddToGroupAsync(userName, groupName);
             var userInGroup = await UserGroups.IsUserInGroup(userName, groupName);
-            await Clients.Group(groupName).SendAsync("userAdded", userName);
+            await Clients.Group(groupName).SendAsync("userAdded", new ReturnObj() { 
+                TriggeringUser = userName
+            });
         }
 
         [FunctionName(nameof(JoinUserError))]
         public async Task JoinUserError([SignalRTrigger] InvocationContext invocationContext, string userName, string groupName, ILogger logger)
         {
-            await UserGroups.AddToGroupAsync(userName, groupName);
+            await UserGroups.RemoveFromGroupAsync(userName, groupName);
+            var userInGroup = await UserGroups.IsUserInGroup(userName, groupName);
             throw new Exception();
         }
     }
