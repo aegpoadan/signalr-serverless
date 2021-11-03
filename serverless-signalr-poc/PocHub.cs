@@ -15,6 +15,8 @@ using System.Text;
 using System.IdentityModel.Tokens.Jwt;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using System.Security.Claims;
+using System.Security;
 
 namespace serverless_signalr_poc
 {
@@ -49,7 +51,7 @@ namespace serverless_signalr_poc
                 return new UnauthorizedResult();
             }
             var validatedTokenAsJwt = validatedToken as JwtSecurityToken;
-            var x = Negotiate(req.Headers["x-ms-signalr-user-id"], validatedTokenAsJwt.Claims.ToList(), TimeSpan.FromTicks(validatedTokenAsJwt.ValidTo.Ticks));
+            var x = Negotiate(validatedTokenAsJwt.Actor, validatedTokenAsJwt.Claims.ToList(), TimeSpan.FromTicks(validatedTokenAsJwt.ValidTo.Ticks));
             return new OkObjectResult(x);
         }
 
@@ -83,7 +85,16 @@ namespace serverless_signalr_poc
         {
             var creds = new SigningCredentials(Key, SecurityAlgorithms.HmacSha256Signature);
             var eCreds = new EncryptingCredentials(EncryptKey, SecurityAlgorithms.Aes128KW, SecurityAlgorithms.Aes128CbcHmacSha256);
-            var token = Handler.CreateJwtSecurityToken("testIss", "testAud", null, DateTime.UtcNow, DateTime.UtcNow.AddHours(1), DateTime.UtcNow, creds, eCreds);
+            var token = Handler.CreateJwtSecurityToken(
+                "testIss", 
+                "testAud", 
+                new ClaimsIdentity(new List<Claim>() { new Claim("Actor", "userId1234") }), 
+                DateTime.UtcNow, 
+                DateTime.UtcNow.AddHours(1), 
+                DateTime.UtcNow, 
+                creds, 
+                eCreds
+            );
             return new OkObjectResult(new JObject()
             {
                 { "token", $"Bearer {Handler.WriteToken(token)}" }
